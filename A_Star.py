@@ -1,26 +1,28 @@
 from Algorithm import Algorithm
 from PriorityQueue import PriorityQueue
 from Graph import Graph
-from Node import Node
+from A_Star_Node import A_Node
 from math import sqrt
 import time
-import pygame
-from typing import Dict
+# import pygame
 
-def H(cur: Node, dest: Node):
+def H(cur: A_Node, dest: A_Node):
     '''
     heuristic function (distance from node to another)
     '''
     return sqrt((cur.x - dest.x)**2 + (cur.y - dest.y)**2)
 
-def D(cur: Node, neighbor: Node):
+def D(cur: A_Node, neighbor: A_Node):
     '''
     edge weight between current node and neighbor
     LMAO edges aren't weighted so it's just 1
     '''
     return 1
 
-def reconstruct_path(source: Node, dest: Node):
+def reconstruct_path(source: A_Node, dest: A_Node):
+    '''
+    Prints out the shortest path between the source and destination nodes.
+    '''
     path = []
     node = dest
     if not node.get_prev() and node!=source: print("Failed to reconstruct path.")
@@ -35,18 +37,20 @@ def reconstruct_path(source: Node, dest: Node):
         printed_path+=f"{n} -> "
     print(printed_path.rstrip(" -> "))
 
-def A_star(source: Node, destination: Node):
+def A_star(source: A_Node, destination: A_Node):
+    '''
+    Finds the shortest path between the source and destination nodes using the A* search algorithm.
+    '''
     pq = PriorityQueue()
     open_set = pq.PriorityQueue(source) #min-heap priority queue
 
-    # prec = {} #a node's preceding node (prec[n] -> node that n came from)
     source.set_gScore(0)
     source.set_fScore(H(source, destination))
 
     while open_set.length()>0:
         current = open_set.extract_min()
         if current == destination:
-            print(f"Found the shortest path from node {source} to node {destination} - {current.f_score} nodes long.")
+            print(f"Found the shortest path from node {source} to node {destination} - {current.f_score} nodes long.\n")
             reconstruct_path(source, current)
             return 
         
@@ -60,12 +64,11 @@ def A_star(source: Node, destination: Node):
                     open_set.insert(neighbor)
     
     print("No path could be found.")
-    return
 
 def main():
     graph = Graph(100, 100, algo=Algorithm.A_STAR)
-    start = graph.get()[17][4]
-    end = graph.get()[89][95]
+    start = graph.get()[27][50]
+    end = graph.get()[99][95]
     start_time = time.time()
     A_star(start, end)
     print("found in:", time.time()-start_time)

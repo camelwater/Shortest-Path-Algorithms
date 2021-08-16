@@ -1,19 +1,21 @@
 from Algorithm import Algorithm
-from Node import Node
+from dijkNode import Dijk_Node
 from PriorityQueue import PriorityQueue
 from Graph import Graph
 import time
-from typing import Dict
 
 
-def L(cur: Node, neighbor: Node):
+def L(cur: Dijk_Node, neighbor: Dijk_Node):
     '''
     return length of edge between two nodes
     (1 here again lmao)
     '''
     return 1
 
-def reconstruct_path(source: Node, dest: Node):
+def reconstruct_path(source: Dijk_Node, dest: Dijk_Node):
+    '''
+    Prints out shortest path between source and destination nodes.
+    '''
     path = []
     node = dest
     if not node.get_prev() and node != source: return "Failed to reconstruct path."
@@ -28,7 +30,10 @@ def reconstruct_path(source: Node, dest: Node):
         printed_path+=f"{n} -> "
     print(printed_path.rstrip(" -> "))
 
-def dijkstra(source: Node, target: Node):
+def dijkstra(source: Dijk_Node, target: Dijk_Node):
+    '''
+    Dijkstra's algorithm to find the shortest path between two nodes.
+    '''
     pq = PriorityQueue()
     queue = pq.PriorityQueue(source)
     source.set_dist(0)
@@ -37,7 +42,7 @@ def dijkstra(source: Node, target: Node):
         current = queue.extract_min()
 
         if current == target:
-            print(f"Shortest path found between node {source} and node {target} - {current.dist} nodes long.")
+            print(f"Found shortest path from node {source} to node {target} - {current.dist} nodes long.\n")
             reconstruct_path(source, current)
             return
 
@@ -53,8 +58,8 @@ def dijkstra(source: Node, target: Node):
 
 def main():
     graph = Graph(100, 100, Algorithm.DIJKSTRA)
-    start = graph.get()[17][4]
-    end = graph.get()[89][95]
+    start = graph.get()[17][21]
+    end = graph.get()[47][69]
     start_time = time.time()
     dijkstra(start, end)
     print("found in:", time.time()-start_time)
