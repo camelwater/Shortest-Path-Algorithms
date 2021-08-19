@@ -11,4 +11,7 @@ class Dijk_Node(Node):
         self.dist = distance
     
     def __lt__(self, obj):
-        return self.dist < obj.dist
+        return (self.dist, self.inserted) < (obj.dist, obj.inserted)
+    
+    def __repr__(self):
+        return f"DijkNode(x:{self.x}, y:{self.y}, dist={self.dist:.2f})"

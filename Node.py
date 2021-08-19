@@ -6,8 +6,10 @@ class Node:
         self.y = y
         self.id = id
         self.neighbors: List[Node] = []
-        self.obstacle = False
-        self.prev = None
+        self.obstacle = False #whether this node is accessible or not
+        self.prev = None #the node from which this node came from on the shortest path
+        self.inserted = 0 #insertion number into the open set (used to break ties - recent insertions are prioritized)
+
 
     def set_obstacle(self):
         self.obstacle = True
@@ -15,14 +17,18 @@ class Node:
     def is_obstacle(self):
         return self.obstacle
     
-    def add_neighbor(self, node):
-        self.neighbors.append(node)
+    def add_neighbor(self, node: 'Node'):
+        if not self.is_obstacle() and not node.is_obstacle():
+            self.neighbors.append(node)
 
     def get_neighbors(self):
         return self.neighbors
     
     def get_prev(self) -> 'Node':
         return self.prev
+    
+    def insertion_rank(self):
+        return self.inserted
 
     def __eq__(self, o: object):
         try:

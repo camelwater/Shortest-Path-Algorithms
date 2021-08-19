@@ -1,49 +1,39 @@
 from Algorithm import Algorithm
-from dijkNode import Dijk_Node
+from DijkNode import Dijk_Node
 from PriorityQueue import PriorityQueue
 from Graph import Graph
 import time
+from math import sqrt
+from utils import nudge, reconstruct_path
 
 
 def L(cur: Dijk_Node, neighbor: Dijk_Node):
     '''
     return length of edge between two nodes
-    (1 here again lmao)
     '''
-    return 1
+    D = 1
 
-def reconstruct_path(source: Dijk_Node, dest: Dijk_Node):
-    '''
-    Prints out shortest path between source and destination nodes.
-    '''
-    path = []
-    node = dest
-    if not node.get_prev() and node != source: return "Failed to reconstruct path."
+    if allow_diagonal_movements: #octile distance for 8-direction movements; Manhattan distance for 4-direction
+        D2 = sqrt(2)
+        dx, dy = abs(cur.x - neighbor.x), abs(cur.y - neighbor.y)
+        return D * max(dx, dy) + (D2 - D) * min(dx, dy)
+        # return sqrt((cur.x - dest.x)**2 + (cur.y - dest.y)**2)
 
-    while node.get_prev():
-        path.append(node)
-        node = node.get_prev()
-    
-    path.append(source)
-    printed_path = ""
-    for n in path[::-1]:
-        printed_path+=f"{n} -> "
-    print(printed_path.rstrip(" -> "))
+    return D * (abs(cur.x - neighbor.x) + abs(cur.y - neighbor.y)) + nudge(cur, neighbor)
 
 def dijkstra(source: Dijk_Node, target: Dijk_Node):
     '''
     Dijkstra's algorithm to find the shortest path between two nodes.
     '''
-    pq = PriorityQueue()
-    queue = pq.PriorityQueue(source)
+    queue = PriorityQueue.with_root(source)
     source.set_dist(0)
 
     while queue.length()>0:
         current = queue.extract_min()
 
         if current == target:
-            print(f"Found shortest path from node {source} to node {target} - {current.dist} nodes long.\n")
-            reconstruct_path(source, current)
+            print(f"Found shortest path from node {source} to node {target} - {current.dist:.2f} nodes long.\n")
+            # reconstruct_path(source, current)
             return
 
         for neighbor in current.get_neighbors():
@@ -57,12 +47,14 @@ def dijkstra(source: Dijk_Node, target: Dijk_Node):
     print("No path could be found.")
 
 def main():
-    graph = Graph(100, 100, Algorithm.DIJKSTRA)
-    start = graph.get()[17][21]
-    end = graph.get()[47][69]
+    graph = Graph(1000, 1000, Algorithm.DIJKSTRA, allow_diagonal=allow_diagonal_movements)
+    print("Finished constructing graph.")
+    start = graph.get()[231][600]
+    end = graph.get()[345][667]
     start_time = time.time()
     dijkstra(start, end)
     print("found in:", time.time()-start_time)
 
 if __name__ == "__main__":
+    allow_diagonal_movements = False
     main()
