@@ -1,3 +1,4 @@
+from DijkNode import Dijk_Node
 from Algorithm import Algorithm
 from PriorityQueue import PriorityQueue
 from Graph import Graph
@@ -17,7 +18,7 @@ SCR_WIDTH = 1280
 SCR_HEIGHT = 720
 
 SURFACE = pygame.display.set_mode((SCR_WIDTH, SCR_HEIGHT)) #resizable?
-pygame.display.set_caption("A* search visualization")
+pygame.display.set_caption("Shortest path visualization")
 BOLD_FONT = pygame.font.SysFont('Segoe UI', 20, True)
 BOLD_FONT_MASS = pygame.font.SysFont('Segoe UI', 50, True)
 NORMAL_FONT = pygame.font.SysFont("Segoe UI", 20, False)
@@ -155,6 +156,52 @@ def A_star(source: A_Node, destination: A_Node):
     SURFACE.blit(not_found_text, ((SCR_WIDTH-not_found_text.get_width())/2, (SCR_HEIGHT-not_found_text.get_height())/2))
     return False
 
+def dijkstra(source: Dijk_Node, target: Dijk_Node):
+    queue = PriorityQueue.with_root(source)
+    searched_queue = []
+
+    source.set_dist(0)
+
+    while queue.length()>0:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+
+        if visualize:
+            SURFACE.fill((255, 255, 255))
+            for row in GRAPH.get():
+                for node in row:
+                    draw(node, is_sd=node in [source, target])
+        
+        current = queue.extract_min()
+        searched_queue.append(current)
+        
+        if current == target:
+            print(f"Found the shortest path from node {source} to node {target} - {current.dist:.2f} nodes long.\n")
+            reconstruct_path(source, current, final=True)
+            return True
+
+        for neighbor in current.get_neighbors():
+            alt = current.dist + D(current, neighbor)
+            if alt < neighbor.dist:
+                neighbor.set_dist(alt)
+                neighbor.prev = current
+                if neighbor not in queue.get_heap():
+                    queue.insert(neighbor)
+        if visualize:
+            for node in queue.get_heap():
+                draw(node, (0, 255, 0))
+            for node in searched_queue:
+                draw(node, (255, 0, 0))
+            reconstruct_path(source, current)
+
+            pygame.display.update()
+                
+    print("No path could be found.")
+    not_found_text = BOLD_FONT_MASS.render("No path could be found.", True, (82, 27, 191))
+    SURFACE.blit(not_found_text, ((SCR_WIDTH-not_found_text.get_width())/2, (SCR_HEIGHT-not_found_text.get_height())/2))
+    return False
+        
 
 def clear_nodes():
     for row in GRAPH.get():
@@ -164,6 +211,20 @@ def clear_nodes():
 def create_graph():
     global GRAPH
     GRAPH = Graph(rows, cols, algorithm, allow_diagonal=allow_diagonal_movements)
+
+def rebuild_graph():
+    global GRAPH, start, end
+    temp_graph = Graph(rows, cols, algorithm, allow_diagonal=allow_diagonal_movements)
+
+    if GRAPH.num_cols == temp_graph.num_cols and GRAPH.num_rows == temp_graph.num_rows:
+        for r in range(len(GRAPH.get())):
+            for c in range(len(GRAPH.get()[r])):
+                temp_graph.get()[r][c].obstacle = GRAPH.get()[r][c].obstacle
+                if GRAPH.get()[r][c] == start:
+                    start = temp_graph.get()[r][c]
+                if GRAPH.get()[r][c] == end:
+                    end = temp_graph.get()[r][c]    
+    GRAPH = temp_graph
 
 def create_button(text, x, y, w, h, color=None):
     color = color or (150, 150, 150)
@@ -193,7 +254,8 @@ def draw(node: A_Node, color = None, is_sd=False, path=False):
         #     pygame.draw.rect(SURFACE, color, (node.x*x_factor+x_factor/2-circle_rad, node.y*y_factor+y_factor/2-circle_rad, size, size))
         # else:
             # pygame.draw.rect(SURFACE, (255, 0, 0), (node.x*x_factor, node.y*y_factor, x_factor, y_factor), 1)
-        pygame.draw.circle(SURFACE, color, (node.x*x_factor+(x_factor/2), node.y*y_factor+(y_factor/2)), circle_rad)
+        radius = circle_rad*5/4 if path else circle_rad
+        pygame.draw.circle(SURFACE, color, (node.x*x_factor+(x_factor/2), node.y*y_factor+(y_factor/2)), radius)
 
 def set_obstacle(pos):
     x, y = pos[0], pos[1]
@@ -277,17 +339,19 @@ def settings_mouseHandler(pos):
     global algorithm, visualize, building_graph, setting_params, allow_diagonal_movements
     if get_rect(a_star_button).collidepoint(pos):
         algorithm = Algorithm.A_STAR
+
     elif get_rect(dijk_button).collidepoint(pos):
         algorithm = Algorithm.DIJKSTRA
+
     elif get_rect(visualize_button).collidepoint(pos):
         visualize = not visualize
     elif get_rect(diagonal_button).collidepoint(pos):
         allow_diagonal_movements = not allow_diagonal_movements
-        if GRAPH:
-            GRAPH.allow_diagonal = allow_diagonal_movements
     elif algorithm and rows is not None and cols is not None and get_rect(build_button).collidepoint(pos):
         if not GRAPH:
             create_graph()
+        else:
+            rebuild_graph()
         building_graph = True
         setting_params = False
 
@@ -340,7 +404,7 @@ def update_screen(events):
                 draw(node, is_sd = node in [start, end])
         
     else: #draw while the algorithm is running
-        A_star(start, end)
+        ALGO_MAP[algorithm](start, end)
         done = True
 
     pygame.display.update()
@@ -359,26 +423,16 @@ def main():
                 if event.key == pygame.K_RETURN and done:
                     done = not done
                     setting_params = True
-                    clear_nodes()
+                    # clear_nodes()
                     break
         if not done:
             update_screen(events)    
-        
 
-    # graph = Graph(1000, 1000, algo=Algorithm.A_STAR, allow_diagonal=allow_diagonal_movements)
-    # print("Finished building graph.")
-    # start = graph.get()[269][178]
-    # end = graph.get()[877][691]
-    
-    # pygame.display.update()
-    # start_time = time.time()
-    # # prof = cProfile.Profile()
-    # # prof.enable()
-    # A_star(start, end)
-    # # prof.disable()
-    # # prof.print_stats()
-    # print(f"found in: {time.time()-start_time} sec")
 
 if __name__ == "__main__":
+    ALGO_MAP = {
+        Algorithm.A_STAR: A_star,
+        Algorithm.DIJKSTRA: dijkstra
+        }
     main()
     

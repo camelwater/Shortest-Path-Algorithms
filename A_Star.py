@@ -69,6 +69,7 @@ def A_star(source: A_Node, destination: A_Node):
 
 def main():
     graph = Graph(1000, 1000, algo=Algorithm.A_STAR, allow_diagonal=allow_diagonal_movements)
+    graph.set_up_neighbors()
     print("Finished building graph.")
     start = graph.get()[269][378]
     end = graph.get()[877][721]

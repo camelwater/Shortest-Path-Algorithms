@@ -40,6 +40,7 @@ class Node:
             return self.id == o.id
         except AttributeError:
             return False
+            
     @abstractmethod
     def __lt__(self, o: object):
         pass
