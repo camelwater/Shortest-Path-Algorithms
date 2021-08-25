@@ -4,7 +4,7 @@ def nudge(cur: Node, neighbor: Node):
     '''
     Adds an extremely small cost to some nodes/paths in order to favor more "straight" paths towards the goal.
 
-    In many cases, there are several possible paths that are all optimal, so this allows the path to look a bit better, in my opinion.
+    Oftentimes, there are several possible paths that are all equally optimal, so this allows the path to look a bit better - at least in my opinion.
     '''
     nudge = 0
     if (cur.x + cur.y) % 2 == 0 and neighbor.x != cur.x: nudge = 1
@@ -25,8 +25,8 @@ def reconstruct_path(source: Node, dest: Node):
     
     path.append(source)
     printed_path = ""
-    for n in path[::-1]:
-        printed_path+=f"{n} -> "
+    for n in range(len(path)-1, -1, -1):
+        printed_path+=f"{path[n]} -> "
     print(printed_path.rstrip(" -> "))
 
 def reconstruct_path_map(prev, source: Node, dest: Node):
@@ -43,6 +43,6 @@ def reconstruct_path_map(prev, source: Node, dest: Node):
     
     path.append(source)
     printed_path = ""
-    for n in path[::-1]:
+    for n in range(len(path)-1, -1, -1):
         printed_path+=f"{n} -> "
     print(printed_path.rstrip(" -> "))

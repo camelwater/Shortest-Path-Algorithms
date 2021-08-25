@@ -14,6 +14,11 @@ class A_Node(Node):
     def set_gScore(self, score):
         self.g_score = score
     
+    def clear(self):
+        super().clear()
+        self.f_score = 99999999
+        self.g_score = 99999999
+
     def __lt__(self, o: object):
         return (self.f_score, self.inserted) < (o.f_score, o.inserted)
     

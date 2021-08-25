@@ -1,3 +1,4 @@
+from abc import abstractmethod
 from typing import List
 
 class Node:
@@ -9,7 +10,6 @@ class Node:
         self.obstacle = False #whether this node is accessible or not
         self.prev = None #the node from which this node came from on the shortest path
         self.inserted = 0 #insertion number into the open set (used to break ties - recent insertions are prioritized)
-
 
     def set_obstacle(self):
         self.obstacle = True
@@ -30,11 +30,18 @@ class Node:
     def insertion_rank(self):
         return self.inserted
 
+    def clear(self):
+        self.inserted = 0
+        self.prev = None
+
     def __eq__(self, o: object):
         try:
             return self.id == o.id
         except AttributeError:
             return False
+    @abstractmethod
+    def __lt__(self, o: object):
+        pass
     
     def __hash__(self):
         return hash((self.__class__, self.id))

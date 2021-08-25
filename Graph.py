@@ -7,14 +7,13 @@ import random as rand
 import numpy as np
 
 class Graph:
-    def __init__(self, rows, cols, algo=None, allow_diagonal=False):
+    def __init__(self, rows, cols, algo, allow_diagonal=False):
         self.num_rows = rows
         self.num_cols = cols
         self.algo = algo
         self.allow_diagonal = allow_diagonal
         self.graph = self.construct_graph()
-        # self.construct_obstacles()
-        self.set_up_neighbors()
+        # self.set_up_neighbors()
 
     def get(self):
         return self.graph
@@ -40,7 +39,7 @@ class Graph:
             for c in range(len(self.graph[r])):
                 self.find_neighbors(self.graph[r][c])
     
-    def construct_obstacles(self):
+    def generate_rand_obstacles(self):
         rand_x = rand.sample(range(self.num_rows), int(self.num_rows/2))
         rand_y = rand.sample(range(self.num_cols), int(self.num_cols/2))
         for r, c in zip(rand_x, rand_y):

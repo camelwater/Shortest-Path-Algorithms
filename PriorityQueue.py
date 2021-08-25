@@ -7,7 +7,7 @@ from DijkNode import Dijk_Node
 
 class PriorityQueue:
     '''
-    min-heap priority queue for search algorithms.
+    min-heap priority queue.
     '''
 
     def __init__(self):
@@ -130,7 +130,7 @@ class PriorityQueue:
         self.index.pop(minimum)
 
         if len(self.heap) == 1:
-            self.heap.pop(0)
+            self.heap.pop()
             return minimum
 
         self.heap[0] = self.heap.pop() #replace root with last element

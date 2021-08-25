@@ -10,6 +10,10 @@ class Dijk_Node(Node):
     def set_dist(self, distance):
         self.dist = distance
     
+    def clear(self):
+        super().clear()
+        self.dist = 99999999
+    
     def __lt__(self, obj):
         return (self.dist, self.inserted) < (obj.dist, obj.inserted)
     
