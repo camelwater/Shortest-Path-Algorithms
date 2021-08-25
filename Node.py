@@ -33,6 +33,7 @@ class Node:
     def clear(self):
         self.inserted = 0
         self.prev = None
+        self.neighbors = []
 
     def __eq__(self, o: object):
         try:
