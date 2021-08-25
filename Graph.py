@@ -39,12 +39,17 @@ class Graph:
             for c in range(len(self.graph[r])):
                 self.find_neighbors(self.graph[r][c])
     
-    def generate_rand_obstacles(self):
-        rand_x = rand.sample(range(self.num_rows), int(self.num_rows/2))
-        rand_y = rand.sample(range(self.num_cols), int(self.num_cols/2))
-        for r, c in zip(rand_x, rand_y):
-            print(r, c)
-            self.graph[r][c].set_obstacle()
+    def generate_rand_obstacles(self, restrict=list()):
+        node_pop = []
+        for r in range(self.num_rows):
+            for c in range(self.num_cols):
+                self.graph[r][c].obstacle = False
+                node_pop.append((r, c))
+
+        rand_points = rand.sample(node_pop, int(self.num_rows*self.num_cols/4))
+        for r, c in rand_points:
+            if self.graph[r][c] not in restrict:
+                self.graph[r][c].set_obstacle()
 
     def find_neighbors(self, node: Node):
         if node.y > 0:

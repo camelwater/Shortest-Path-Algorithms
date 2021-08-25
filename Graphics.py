@@ -7,15 +7,16 @@ from math import sqrt
 from utils import nudge
 import pygame
 from pygame_widgets.button import Button
-# from TextInput import TextInput
 import pygame.draw
 from operator import sub
+from tkinter import messagebox
+import tkinter as tk
 
 pygame.init()
 pygame.display.init()
 pygame.font.init()
-SCR_WIDTH = 1280
-SCR_HEIGHT = 720
+SCR_WIDTH = 1400
+SCR_HEIGHT = 750
 
 SURFACE = pygame.display.set_mode((SCR_WIDTH, SCR_HEIGHT)) #resizable?
 pygame.display.set_caption("Shortest path visualization")
@@ -26,7 +27,6 @@ GRAPH = None
 
 build_text = BOLD_FONT.render('BUILDING GRAPH...', True, (255, 255, 255))
 finish_build_text = BOLD_FONT.render("Finished building graph.", True, (255,255,255))
-# text_input = TextInput()
 
 a_star_button = None
 dijk_button = None
@@ -34,8 +34,12 @@ start_button = None
 visualize_button = None
 build_button = None
 diagonal_button = None
+down_arrow = None
+up_arrow = None
+gen_rand_button = None
 
 allow_diagonal_movements = False
+random_obs = False
 select_screen = False
 setting_params = True
 building_graph = False
@@ -101,6 +105,8 @@ def reconstruct_path(source: A_Node, dest: A_Node, final = False):
         draw(node, (0,0,255), path=True)
 
     draw(source, (0, 255, 255) if final else (0, 0, 255))
+
+    pygame.display.update()
     
 def A_star(source: A_Node, destination: A_Node):
     '''
@@ -130,6 +136,11 @@ def A_star(source: A_Node, destination: A_Node):
         if current == destination:
             print(f"Found the shortest path from node {source} to node {destination} - {current.f_score:.2f} nodes long.\n")
             reconstruct_path(source, current, final=True)
+            root = tk.Tk()
+            root.withdraw()
+            root.overrideredirect(1)
+            messagebox.showinfo("!!!", f"Shortest path from node {source} to node {destination} :: {current.f_score:.2f} nodes long.")
+            root.destroy()
             return True
         
         for neighbor in current.get_neighbors():
@@ -157,12 +168,12 @@ def A_star(source: A_Node, destination: A_Node):
     return False
 
 def dijkstra(source: Dijk_Node, target: Dijk_Node):
-    queue = PriorityQueue.with_root(source)
-    searched_queue = []
+    open_set = PriorityQueue.with_root(source)
+    visited = []
 
     source.set_dist(0)
 
-    while queue.length()>0:
+    while open_set.length()>0:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
@@ -173,12 +184,18 @@ def dijkstra(source: Dijk_Node, target: Dijk_Node):
                 for node in row:
                     draw(node, is_sd=node in [source, target])
         
-        current = queue.extract_min()
-        searched_queue.append(current)
+        current = open_set.extract_min()
+        visited.append(current)
         
         if current == target:
             print(f"Found the shortest path from node {source} to node {target} - {current.dist:.2f} nodes long.\n")
             reconstruct_path(source, current, final=True)
+            root = tk.Tk()
+            root.withdraw()
+            root.overrideredirect(1)
+            messagebox.showinfo("!!!", f"Shortest path from node {source} to node {target} :: {current.dist:.2f} nodes long.")
+            root.destroy()
+
             return True
 
         for neighbor in current.get_neighbors():
@@ -186,12 +203,12 @@ def dijkstra(source: Dijk_Node, target: Dijk_Node):
             if alt < neighbor.dist:
                 neighbor.set_dist(alt)
                 neighbor.prev = current
-                if neighbor not in queue.get_heap():
-                    queue.insert(neighbor)
+                if neighbor not in open_set.get_heap():
+                    open_set.insert(neighbor)
         if visualize:
-            for node in queue.get_heap():
+            for node in open_set.get_heap():
                 draw(node, (0, 255, 0))
-            for node in searched_queue:
+            for node in visited:
                 draw(node, (255, 0, 0))
             reconstruct_path(source, current)
 
@@ -210,10 +227,20 @@ def clear_nodes():
 
 def create_graph():
     global GRAPH
+    recalc_scale()
     GRAPH = Graph(rows, cols, algorithm, allow_diagonal=allow_diagonal_movements)
+
+def recalc_scale():
+    global x_factor, y_factor, circle_rad, size
+
+    x_factor = SCR_WIDTH/cols
+    y_factor = SCR_HEIGHT/rows
+    size = min(x_factor, y_factor)*9/10
+    circle_rad = size*9/10 // 2
 
 def rebuild_graph():
     global GRAPH, start, end
+    recalc_scale()
     temp_graph = Graph(rows, cols, algorithm, allow_diagonal=allow_diagonal_movements)
 
     if GRAPH.num_cols == temp_graph.num_cols and GRAPH.num_rows == temp_graph.num_rows:
@@ -223,14 +250,16 @@ def rebuild_graph():
                 if GRAPH.get()[r][c] == start:
                     start = temp_graph.get()[r][c]
                 if GRAPH.get()[r][c] == end:
-                    end = temp_graph.get()[r][c]    
+                    end = temp_graph.get()[r][c]   
+    else:
+        start = end = None 
     GRAPH = temp_graph
 
 def create_button(text, x, y, w, h, color=None):
     color = color or (150, 150, 150)
     button = Button(
         SURFACE, x, y, w, h,
-        text=text, fontSize = int(w/7), margin=10, 
+        text=text, fontSize = int(w//(len(text)/(8/3))), margin=50, 
         colour = color,
         hoverColour = tuple(map(sub, color, (25, 25, 25))),
         radius = 20
@@ -258,6 +287,9 @@ def draw(node: A_Node, color = None, is_sd=False, path=False):
         pygame.draw.circle(SURFACE, color, (node.x*x_factor+(x_factor/2), node.y*y_factor+(y_factor/2)), radius)
 
 def set_obstacle(pos):
+    '''
+    sets a node as an obstacle.
+    '''
     x, y = pos[0], pos[1]
     row, col = x // (SCR_WIDTH / GRAPH.num_cols), y // (SCR_HEIGHT / GRAPH.num_rows)
     try:
@@ -272,6 +304,9 @@ def set_obstacle(pos):
         node.set_obstacle()
 
 def set_start(pos):
+    '''
+    sets the source node.
+    '''
     global start
     x, y = pos[0], pos[1]
     row, col = x // (SCR_WIDTH / GRAPH.num_cols), y // (SCR_HEIGHT / GRAPH.num_rows)
@@ -288,6 +323,9 @@ def set_start(pos):
         start = select
     
 def set_end(pos):
+    '''
+    sets the target node.
+    '''
     global end
     x, y = pos[0], pos[1]
     row, col = x // (SCR_WIDTH / GRAPH.num_cols), y // (SCR_HEIGHT / GRAPH.num_rows)
@@ -307,28 +345,46 @@ def draw_settings(events):
     '''
     draw settings buttons.
     '''
-    global a_star_button, dijk_button, visualize_button, build_button, diagonal_button
+    global a_star_button, dijk_button, visualize_button, build_button, diagonal_button, up_arrow, down_arrow, gen_rand_button
 
-    a_star_button = create_button("A* algorithm", x = (SCR_WIDTH-200)/3, y = (SCR_HEIGHT-100)/4, w = 200, h = 100, color = (79, 194, 131) if algorithm == Algorithm.A_STAR else None)
+    a_star_button = create_button("A* algorithm", x = (SCR_WIDTH-200)/3, y = (SCR_HEIGHT-100)/5, w = 200, h = 100, color = (79, 194, 131) if algorithm == Algorithm.A_STAR else None)
     a_star_button.listen(events)
     a_star_button.draw()
-    dijk_button = create_button("Dijkstra's algorithm", x = (SCR_WIDTH-200)*2/3, y = (SCR_HEIGHT-100)/4, w = 200, h = 100, color = (79, 194, 131) if algorithm == Algorithm.DIJKSTRA else None)
+    dijk_button = create_button("Dijkstra's algorithm", x = (SCR_WIDTH-200)*2/3, y = (SCR_HEIGHT-100)/5, w = 200, h = 100, color = (79, 194, 131) if algorithm == Algorithm.DIJKSTRA else None)
     dijk_button.listen(events)
     dijk_button.draw()
     
-    # text_input.update(events)
-    # SURFACE.blit(text_input.get_surface(), ((SCR_WIDTH-150)/2, (SCR_HEIGHT-100)/2))
+    size_text = BOLD_FONT_MASS.render(f"Size: {rows}x{cols}", True, (255, 255, 255))
+    SURFACE.blit(size_text, ((SCR_WIDTH-size_text.get_width())/2, (SCR_HEIGHT-size_text.get_height())*3/7)) 
 
-    visualize_button = create_button(f"Visualize: {visualize}", x = (SCR_WIDTH-125)*2/5, y = (SCR_HEIGHT-75)/2, w = 125, h = 75)
+    up_arrow = pygame.draw.polygon(SURFACE, (0, 115, 150), (((SCR_WIDTH-size_text.get_width())/2+(2/3*size_text.get_width()+15/2), 
+                                                                (SCR_HEIGHT-size_text.get_height())*3/7-(1/4*size_text.get_height())),
+                                                            ((SCR_WIDTH-size_text.get_width())/2+(2/3*size_text.get_width()), 
+                                                                (SCR_HEIGHT-size_text.get_height())*3/7-(1/4*size_text.get_height())+15),
+                                                            ((SCR_WIDTH-size_text.get_width())/2+(2/3*size_text.get_width())+15, 
+                                                                (SCR_HEIGHT-size_text.get_height())*3/7-(1/4*size_text.get_height())+15)))
+
+    down_arrow = pygame.draw.polygon(SURFACE, (0, 115, 150), (((SCR_WIDTH-size_text.get_width())/2+(2/3*size_text.get_width()+15/2), 
+                                                                (SCR_HEIGHT-size_text.get_height())*3/7+(5/4*size_text.get_height())+15),
+                                                            ((SCR_WIDTH-size_text.get_width())/2+(2/3*size_text.get_width()), 
+                                                                (SCR_HEIGHT-size_text.get_height())*3/7+(5/4*size_text.get_height())),
+                                                            ((SCR_WIDTH-size_text.get_width())/2+(2/3*size_text.get_width())+15, 
+                                                                (SCR_HEIGHT-size_text.get_height())*3/7+(5/4*size_text.get_height()))))
+
+    visualize_button = create_button(f"Visualize: {visualize}", x = (SCR_WIDTH-125)*1/3, y = (SCR_HEIGHT-75)*2/3, w = 125, h = 75)
     visualize_button.listen(events)
     visualize_button.draw()
 
-    diagonal_button = create_button(f"Diagonals: {allow_diagonal_movements}", x = (SCR_WIDTH-125)*3/5, y = (SCR_HEIGHT-75)/2, w = 125, h = 75)
+    diagonal_button = create_button(f"Diagonals: {allow_diagonal_movements}", x = (SCR_WIDTH-125)*2/3, y = (SCR_HEIGHT-75)*2/3, w = 125, h = 75)
     diagonal_button.listen(events)
     diagonal_button.draw()
 
+    gen_rand_button = create_button(f"Random obstacles: {random_obs}", x = (SCR_WIDTH-250)*1/2, y = (SCR_HEIGHT-75)*2/3, w = 250, h = 75)
+    gen_rand_button.listen(events)
+    gen_rand_button.draw()
+
     if algorithm and rows is not None and cols is not None:
-        build_button = create_button("Build Graph", x = (SCR_WIDTH-250)/2, y = (SCR_HEIGHT-100)*5/6, w = 250, h = 100)
+        build_button = create_button("Build Graph", x = (SCR_WIDTH-250)/2, y = (SCR_HEIGHT-100)*9/10    , w = 250, h = 100)
         build_button.listen(events)
         build_button.draw()
 
@@ -336,7 +392,7 @@ def settings_mouseHandler(pos):
     '''
     handle mouse events in the settings screen.
     '''
-    global algorithm, visualize, building_graph, setting_params, allow_diagonal_movements
+    global algorithm, visualize, building_graph, setting_params, allow_diagonal_movements, rows, cols, random_obs
     if get_rect(a_star_button).collidepoint(pos):
         algorithm = Algorithm.A_STAR
 
@@ -347,11 +403,23 @@ def settings_mouseHandler(pos):
         visualize = not visualize
     elif get_rect(diagonal_button).collidepoint(pos):
         allow_diagonal_movements = not allow_diagonal_movements
+    elif get_rect(gen_rand_button).collidepoint(pos):
+        random_obs = not random_obs
+    
+    elif up_arrow.collidepoint(pos):
+        rows = cols = min(rows+25, 100)
+    elif down_arrow.collidepoint(pos):
+        rows = cols = max(rows-25, 25)
+
     elif algorithm and rows is not None and cols is not None and get_rect(build_button).collidepoint(pos):
-        if not GRAPH:
+        if not GRAPH: #not retrying
             create_graph()
-        else:
+        else: #retrying, so save the start+end nodes and obstacles
             rebuild_graph()
+        
+        if random_obs:
+            GRAPH.generate_rand_obstacles([start, end])
+
         building_graph = True
         setting_params = False
 
