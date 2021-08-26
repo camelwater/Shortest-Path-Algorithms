@@ -1,3 +1,4 @@
+from typing import Iterator, List
 from DijkNode import Dijk_Node
 from Algorithm import Algorithm
 from PriorityQueue import PriorityQueue
@@ -11,6 +12,7 @@ import pygame.draw
 from operator import sub
 from tkinter import messagebox
 import tkinter as tk
+from SQ import Queue
 
 pygame.init()
 pygame.display.init()
@@ -30,6 +32,7 @@ finish_build_text = BOLD_FONT.render("Finished building graph.", True, (255,255,
 
 a_star_button = None
 dijk_button = None
+bfs_button = None
 start_button = None
 visualize_button = None
 build_button = None
@@ -69,9 +72,10 @@ def H(cur: A_Node, dest: A_Node):
         D2 = sqrt(2)
         dx, dy = abs(cur.x - dest.x), abs(cur.y - dest.y)
         return D * max(dx, dy) + (D2 - D) * min(dx, dy)
-        # return sqrt((cur.x - dest.x)**2 + (cur.y - dest.y)**2)
+        
 
     return D * (abs(cur.x - dest.x) + abs(cur.y - dest.y))
+    # return sqrt((cur.x - dest.x)**2 + (cur.y - dest.y)**2)
 
 def D(cur: A_Node, neighbor: A_Node):
     '''
@@ -218,7 +222,61 @@ def dijkstra(source: Dijk_Node, target: Dijk_Node):
     not_found_text = BOLD_FONT_MASS.render("No path could be found.", True, (82, 27, 191))
     SURFACE.blit(not_found_text, ((SCR_WIDTH-not_found_text.get_width())/2, (SCR_HEIGHT-not_found_text.get_height())/2))
     return False
+
+def BFS(source, target):
+    '''
+    Find shortest path between two nodes with breadth-first search.
+    '''
+    queue = Queue()
+    explored = set()
+    explored.add(source)
+    queue.enqueue(source)
+    source.set_dist(0)
+
+    while not queue.empty():
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+
+        if visualize:
+            SURFACE.fill((255, 255, 255))
+            for row in GRAPH.get():
+                for node in row:
+                    draw(node, is_sd=node in [source, target])
+
+        current = queue.dequeue()
+
+        if current == target:
+            print(f"Found the shortest path from node {source} to node {target} - {current.dist:.2f} nodes long.\n")
+            reconstruct_path(source, current, final=True)
+            root = tk.Tk()
+            root.withdraw()
+            root.overrideredirect(1)
+            messagebox.showinfo("!!!", f"Shortest path from node {source} to node {target} :: {current.dist:.2f} nodes long.")
+            root.destroy()
+            return True
         
+        for neighbor in current.get_neighbors():
+            if neighbor not in explored:
+                neighbor.set_dist(current.dist + D(current, neighbor))
+                neighbor.prev = current
+                queue.enqueue(neighbor)
+                explored.add(neighbor)
+        
+        if visualize:
+            for node in explored:
+                draw(node, (255, 0, 0))
+            for node in queue.get():
+                draw(node, (0, 255, 0))
+            reconstruct_path(source, current)
+
+            pygame.display.update()
+
+    print("No path could be found.")
+    not_found_text = BOLD_FONT_MASS.render("No path could be found.", True, (82, 27, 191))
+    SURFACE.blit(not_found_text, ((SCR_WIDTH-not_found_text.get_width())/2, (SCR_HEIGHT-not_found_text.get_height())/2))
+    return False
+
 
 def clear_nodes():
     for row in GRAPH.get():
@@ -259,7 +317,7 @@ def create_button(text, x, y, w, h, color=None):
     color = color or (150, 150, 150)
     button = Button(
         SURFACE, x, y, w, h,
-        text=text, fontSize = int(w//(len(text)/(8/3))), margin=50, 
+        text=text, fontSize = min(int(w//(len(text)/(8/3))), int(w/7)), margin=50, 
         colour = color,
         hoverColour = tuple(map(sub, color, (25, 25, 25))),
         radius = 20
@@ -345,14 +403,17 @@ def draw_settings(events):
     '''
     draw settings buttons.
     '''
-    global a_star_button, dijk_button, visualize_button, build_button, diagonal_button, up_arrow, down_arrow, gen_rand_button
+    global a_star_button, dijk_button, bfs_button, visualize_button, build_button, diagonal_button, up_arrow, down_arrow, gen_rand_button
 
-    a_star_button = create_button("A* algorithm", x = (SCR_WIDTH-200)/3, y = (SCR_HEIGHT-100)/5, w = 200, h = 100, color = (79, 194, 131) if algorithm == Algorithm.A_STAR else None)
+    a_star_button = create_button("A*", x = (SCR_WIDTH-200)*1/4, y = (SCR_HEIGHT-100)/5, w = 200, h = 100, color = (79, 194, 131) if algorithm == Algorithm.A_STAR else None)
     a_star_button.listen(events)
     a_star_button.draw()
-    dijk_button = create_button("Dijkstra's algorithm", x = (SCR_WIDTH-200)*2/3, y = (SCR_HEIGHT-100)/5, w = 200, h = 100, color = (79, 194, 131) if algorithm == Algorithm.DIJKSTRA else None)
+    dijk_button = create_button("Dijkstra's", x = (SCR_WIDTH-200)*3/4, y = (SCR_HEIGHT-100)/5, w = 200, h = 100, color = (79, 194, 131) if algorithm == Algorithm.DIJKSTRA else None)
     dijk_button.listen(events)
     dijk_button.draw()
+    bfs_button = create_button("Breadth-first", x = (SCR_WIDTH-200)*2/4, y = (SCR_HEIGHT-100)/5, w = 200, h = 100, color = (79, 194, 131) if algorithm == Algorithm.BFS else None)
+    bfs_button.listen(events)
+    bfs_button.draw()
     
     size_text = BOLD_FONT_MASS.render(f"Size: {rows}x{cols}", True, (255, 255, 255))
     SURFACE.blit(size_text, ((SCR_WIDTH-size_text.get_width())/2, (SCR_HEIGHT-size_text.get_height())*3/7)) 
@@ -398,7 +459,10 @@ def settings_mouseHandler(pos):
 
     elif get_rect(dijk_button).collidepoint(pos):
         algorithm = Algorithm.DIJKSTRA
-
+    
+    elif get_rect(bfs_button).collidepoint(pos):
+        algorithm = Algorithm.BFS
+    
     elif get_rect(visualize_button).collidepoint(pos):
         visualize = not visualize
     elif get_rect(diagonal_button).collidepoint(pos):
@@ -500,7 +564,8 @@ def main():
 if __name__ == "__main__":
     ALGO_MAP = {
         Algorithm.A_STAR: A_star,
-        Algorithm.DIJKSTRA: dijkstra
+        Algorithm.DIJKSTRA: dijkstra,
+        Algorithm.BFS: BFS
         }
     main()
     

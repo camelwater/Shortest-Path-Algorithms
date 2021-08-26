@@ -24,10 +24,11 @@ class Graph:
         counter = 1
         for r in range(self.num_rows):
             for c in range(self.num_cols):
-                if self.algo == Algorithm.DIJKSTRA:
-                    node = Dijk_Node(r, c, counter)
-                else:
+                if self.algo == Algorithm.A_STAR:
                     node = A_Node(r, c, counter)
+                else:
+                    node = Dijk_Node(r, c, counter)
+
 
                 graph[r][c] = node
                 counter+=1
