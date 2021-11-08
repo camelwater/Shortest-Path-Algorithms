@@ -19,8 +19,9 @@ class Graph:
         return self.graph
     
     def construct_graph(self) -> List[List[Node]]:
-        graph = [[0 for _ in range(self.num_cols)] for _ in range(self.num_rows)]
-        # graph = np.zeros(shape=(self.num_rows, self.num_cols)).tolist()
+        # graph = [[0 for _ in range(self.num_cols)] for _ in range(self.num_rows)]
+        graph = np.zeros((self.num_rows, self.num_cols)).tolist()
+        
         counter = 1
         for r in range(self.num_rows):
             for c in range(self.num_cols):

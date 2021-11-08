@@ -4,7 +4,7 @@ from Graph import Graph
 from A_Star_Node import A_Node
 from math import sqrt
 import time
-import cProfile
+# import cProfile
 from utils import nudge, reconstruct_path
 # import pygame
 
@@ -47,7 +47,7 @@ def A_star(source: A_Node, destination: A_Node):
     source.set_gScore(0)
     source.set_fScore(H(source, destination))
 
-    while open_set.length()>0:
+    while not open_set.empty():
         current = open_set.extract_min()
 
         if current == destination:
@@ -71,8 +71,8 @@ def main():
     graph = Graph(1000, 1000, algo=Algorithm.A_STAR, allow_diagonal=allow_diagonal_movements)
     graph.set_up_neighbors()
     print("Finished building graph.")
-    start = graph.get()[269][378]
-    end = graph.get()[877][721]
+    start = graph.get()[231][300]
+    end = graph.get()[745][667]
 
     start_time = time.time()
     # prof = cProfile.Profile()

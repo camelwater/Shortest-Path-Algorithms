@@ -1,3 +1,5 @@
 __pycache__
 .venv
-TextInput.py
+build
+dist
+Graphics.spec

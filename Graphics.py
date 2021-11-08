@@ -1,4 +1,3 @@
-from typing import Iterator, List
 from DijkNode import Dijk_Node
 from Algorithm import Algorithm
 from PriorityQueue import PriorityQueue
@@ -50,8 +49,8 @@ algorithm = None
 rows = 50
 cols = 50
 
-x_factor = SCR_WIDTH/(cols)
-y_factor = SCR_HEIGHT/(rows)
+x_factor = SCR_WIDTH/cols
+y_factor = SCR_HEIGHT/rows
 size = min(x_factor, y_factor)*9/10
 circle_rad = size*9/10 // 2
 
@@ -127,6 +126,10 @@ def A_star(source: A_Node, destination: A_Node):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    exit()
 
         if visualize:
             SURFACE.fill((255, 255, 255))
@@ -181,6 +184,10 @@ def dijkstra(source: Dijk_Node, target: Dijk_Node):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    exit()
 
         if visualize:
             SURFACE.fill((255, 255, 255))
@@ -237,6 +244,10 @@ def BFS(source, target):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 pygame.quit()
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    exit()
 
         if visualize:
             SURFACE.fill((255, 255, 255))
@@ -445,7 +456,7 @@ def draw_settings(events):
     gen_rand_button.draw()
 
     if algorithm and rows is not None and cols is not None:
-        build_button = create_button("Build Graph", x = (SCR_WIDTH-250)/2, y = (SCR_HEIGHT-100)*9/10    , w = 250, h = 100)
+        build_button = create_button("Build Graph", x = (SCR_WIDTH-250)/2, y = (SCR_HEIGHT-100)*9/10, w = 250, h = 100)
         build_button.listen(events)
         build_button.draw()
 
@@ -552,7 +563,10 @@ def main():
                 pygame.quit()
                 exit()
             elif event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_RETURN and done:
+                if event.key == pygame.K_ESCAPE:
+                    pygame.quit()
+                    exit()
+                elif event.key == pygame.K_RETURN and done:
                     done = not done
                     setting_params = True
                     # clear_nodes()

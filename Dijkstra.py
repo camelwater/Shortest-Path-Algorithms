@@ -28,7 +28,7 @@ def dijkstra(source: Dijk_Node, target: Dijk_Node):
     queue = PriorityQueue.with_root(source)
     source.set_dist(0)
 
-    while queue.length()>0:
+    while not queue.empty():
         current = queue.extract_min()
 
         if current == target:
@@ -41,16 +41,17 @@ def dijkstra(source: Dijk_Node, target: Dijk_Node):
             if alt < neighbor.dist:
                 neighbor.set_dist(alt)
                 neighbor.prev = current
-                if neighbor not in queue.get_heap():
+                if not queue.contains(neighbor):
                     queue.insert(neighbor)
     
     print("No path could be found.")
 
 def main():
     graph = Graph(1000, 1000, Algorithm.DIJKSTRA, allow_diagonal=allow_diagonal_movements)
+    graph.set_up_neighbors()
     print("Finished constructing graph.")
     start = graph.get()[231][600]
-    end = graph.get()[345][667]
+    end = graph.get()[745][667]
     start_time = time.time()
     dijkstra(start, end)
     print("found in:", time.time()-start_time)
